@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { assignmentService } from '@/services/assignmentService';
 import { productionFilesService } from '@/services/productionFilesService';
-import { FilmIcon, ClockIcon, CheckCircleIcon, PlayCircleIcon, EyeIcon, CloudArrowUpIcon, TrashIcon, DocumentIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { FilmIcon, CheckCircleIcon, PlayCircleIcon, EyeIcon, CloudArrowUpIcon, TrashIcon, DocumentIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ViralAnalysis, UpdateProductionStageData, ProductionFile } from '@/types';

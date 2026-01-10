@@ -204,7 +204,7 @@ export const assignmentService = {
       updateData.production_completed_at = new Date().toISOString();
     }
 
-    const { data: updated, error } = await supabase
+    const { error } = await supabase
       .from('viral_analyses')
       .update(updateData)
       .eq('id', analysisId)
@@ -221,7 +221,7 @@ export const assignmentService = {
     analysisId: string,
     data: UpdateProductionDetailsData
   ): Promise<ViralAnalysis> {
-    const { data: updated, error } = await supabase
+    const { error } = await supabase
       .from('viral_analyses')
       .update(data)
       .eq('id', analysisId)

@@ -271,7 +271,7 @@ export default function AdminDashboard() {
   });
 
   // Fetch all users
-  const { data: users } = useQuery({
+  const { data: _users } = useQuery({
     queryKey: ['admin', 'users'],
     queryFn: profileService.getAllProfiles,
   });
@@ -284,7 +284,7 @@ export default function AdminDashboard() {
   });
 
   // Update analysis status mutation
-  const updateStatusMutation = useMutation({
+  const _updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: 'PENDING' | 'APPROVED' | 'REJECTED' }) =>
       adminService.updateAnalysisStatus(id, status),
     onSuccess: () => {

@@ -73,7 +73,7 @@ export const adminService = {
     let feedback_voice_note_url: string | undefined;
     if (reviewData.feedbackVoiceNote) {
       const fileName = `feedback-${id}-${Date.now()}.webm`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('voice-notes')
         .upload(fileName, reviewData.feedbackVoiceNote, {
           contentType: 'audio/webm',

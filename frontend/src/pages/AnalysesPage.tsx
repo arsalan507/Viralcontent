@@ -1092,7 +1092,7 @@ export default function AnalysesPage() {
                       <VoiceRecorder
                         label="Voice Feedback (Optional)"
                         placeholder="Record audio feedback for the script writer"
-                        onRecordingComplete={(blob, url) => {
+                        onRecordingComplete={(blob, _url) => {
                           setReviewData({ ...reviewData, feedbackVoiceNote: blob });
                         }}
                         onClear={() => {

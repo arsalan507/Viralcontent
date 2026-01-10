@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { assignmentService } from '@/services/assignmentService';
-import type { ViralAnalysis, AssignTeamData, Profile } from '@/types';
+import type { ViralAnalysis, AssignTeamData } from '@/types';
 import {
   UserGroupIcon,
   VideoCameraIcon,

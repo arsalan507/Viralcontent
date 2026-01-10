@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { assignmentService } from '@/services/assignmentService';
-import { MegaphoneIcon, ClockIcon, CheckCircleIcon, RocketLaunchIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { MegaphoneIcon, CheckCircleIcon, RocketLaunchIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ViralAnalysis, UpdateProductionStageData } from '@/types';
