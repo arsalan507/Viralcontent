@@ -283,21 +283,6 @@ export default function AdminDashboard() {
     enabled: !!selectedAnalysis?.id,
   });
 
-  // Update analysis status mutation
-  const _updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: 'PENDING' | 'APPROVED' | 'REJECTED' }) =>
-      adminService.updateAnalysisStatus(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'analyses'] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] });
-      toast.success('Analysis status updated');
-      setIsViewModalOpen(false);
-    },
-    onError: () => {
-      toast.error('Failed to update status');
-    },
-  });
-
   // Review analysis mutation (with scoring)
   const reviewMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: ReviewAnalysisData }) =>
