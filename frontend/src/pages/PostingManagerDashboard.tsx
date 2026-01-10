@@ -90,11 +90,11 @@ export default function PostingManagerDashboard() {
     finalReview: analyses.filter(a => a.production_stage === ProductionStage.FINAL_REVIEW).length,
   };
 
-  // Available stages for posting manager
+  // Posting Managers can only mark as POSTED
+  // They cannot change other stages - that's admin-only
   const postingManagerStages = [
-    ProductionStage.FINAL_REVIEW,
     ProductionStage.READY_TO_POST,
-    ProductionStage.POSTED,
+    ProductionStage.POSTED, // Mark as posted after publishing
   ];
 
   return (
@@ -400,7 +400,8 @@ export default function PostingManagerDashboard() {
 
                   {/* Update Production Stage */}
                   <div className="border-t pt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Posting Stage</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Posting Status</h3>
+                    <p className="text-sm text-gray-600 mb-4">You can mark content as posted after publishing</p>
 
                     <div className="space-y-4">
                       <div>

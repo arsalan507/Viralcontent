@@ -198,13 +198,11 @@ export default function EditorDashboard() {
     finalReview: analyses.filter(a => a.production_stage === ProductionStage.FINAL_REVIEW).length,
   };
 
-  // Available stages for editor
+  // Editors can only move to EDITING or submit for EDIT_REVIEW
+  // They cannot change other stages - that's admin-only
   const editorStages = [
-    ProductionStage.SHOOT_REVIEW,
     ProductionStage.EDITING,
-    ProductionStage.EDIT_REVIEW,
-    ProductionStage.FINAL_REVIEW,
-    ProductionStage.READY_TO_POST,
+    ProductionStage.EDIT_REVIEW, // Submit for admin review
   ];
 
   return (
@@ -683,11 +681,12 @@ export default function EditorDashboard() {
 
                   {/* Update Production Stage */}
                   <div className="border-t pt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Production Stage</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Editing Status</h3>
+                    <p className="text-sm text-gray-600 mb-4">You can mark your editing work progress or submit for admin review</p>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Production Stage</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Editing Status</label>
                         <select
                           value={selectedStage}
                           onChange={(e) => setSelectedStage(e.target.value)}

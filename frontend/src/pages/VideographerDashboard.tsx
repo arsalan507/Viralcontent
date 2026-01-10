@@ -175,12 +175,11 @@ export default function VideographerDashboard() {
     shootReview: analyses.filter(a => a.production_stage === ProductionStage.SHOOT_REVIEW).length,
   };
 
-  // Available stages for videographer
+  // Videographers can only move to SHOOTING or submit for SHOOT_REVIEW
+  // They cannot change other stages - that's admin-only
   const videographerStages = [
-    ProductionStage.PRE_PRODUCTION,
     ProductionStage.SHOOTING,
-    ProductionStage.SHOOT_REVIEW,
-    ProductionStage.EDITING, // Move to next phase
+    ProductionStage.SHOOT_REVIEW, // Submit for admin review
   ];
 
   return (
@@ -602,11 +601,12 @@ export default function VideographerDashboard() {
 
                   {/* Update Production Stage */}
                   <div className="border-t pt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Production Stage</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Shooting Status</h3>
+                    <p className="text-sm text-gray-600 mb-4">You can mark your shooting progress or submit for admin review</p>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Production Stage</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Shooting Status</label>
                         <select
                           value={selectedStage}
                           onChange={(e) => setSelectedStage(e.target.value)}
