@@ -145,8 +145,15 @@ app.delete('/api/admin/users/:userId', verifyAdmin, async (req, res) => {
   }
 });
 
+// ====================
+// Upload Routes (Google Drive Service Account)
+// ====================
+const uploadRoutes = require('./routes/uploadRoutes');
+app.use('/api/upload', uploadRoutes);
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Backend server running on http://localhost:${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`📤 Upload endpoints: http://localhost:${PORT}/api/upload/*`);
 });

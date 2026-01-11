@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { assignmentService } from '@/services/assignmentService';
 import { productionFilesService } from '@/services/productionFilesService';
+import { videographerProjectService } from '@/services/videographerProjectService';
 import { VideoCameraIcon, ClockIcon, CheckCircleIcon, PlayCircleIcon, EyeIcon, CloudArrowUpIcon, TrashIcon, DocumentIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -15,11 +16,19 @@ export default function VideographerDashboard() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedStage, setSelectedStage] = useState<string>('');
   const [productionNotes, setProductionNotes] = useState('');
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+
+  // New project request state
+  const [newProjectTitle, setNewProjectTitle] = useState('');
+  const [newProjectReferenceUrl, setNewProjectReferenceUrl] = useState('');
+  const [newProjectDescription, setNewProjectDescription] = useState('');
+  const [newProjectShootDate, setNewProjectShootDate] = useState('');
+  const [newProjectPeople, setNewProjectPeople] = useState<number>(1);
 
   // File upload state
   const [showFileForm, setShowFileForm] = useState(false);
   const [fileName, setFileName] = useState('');
-  const [fileType, setFileType] = useState<string>(FileType.RAW_FOOTAGE);
+  const [fileType, setFileType] = useState<string>(FileType.A_ROLL);
   const [fileDescription, setFileDescription] = useState('');
 
   // Fetch assigned analyses
@@ -90,6 +99,27 @@ export default function VideographerDashboard() {
     },
     onError: () => {
       toast.error('Failed to update production stage');
+    },
+  });
+
+  // Create project mutation
+  const createProjectMutation = useMutation({
+    mutationFn: videographerProjectService.createProject,
+    onSuccess: (newAnalysis) => {
+      queryClient.invalidateQueries({ queryKey: ['videographer', 'assignments'] });
+      toast.success('Project created successfully! You can now start uploading footage.');
+      setIsNewProjectModalOpen(false);
+      // Reset form
+      setNewProjectTitle('');
+      setNewProjectReferenceUrl('');
+      setNewProjectDescription('');
+      setNewProjectShootDate('');
+      setNewProjectPeople(1);
+      // Open the new project
+      openViewModal(newAnalysis);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create project');
     },
   });
 
@@ -189,14 +219,23 @@ export default function VideographerDashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-          <VideoCameraIcon className="w-8 h-8 mr-3 text-primary-600" />
-          Videographer Dashboard
-        </h1>
-        <p className="mt-2 text-gray-600">
-          Manage your assigned video projects
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <VideoCameraIcon className="w-8 h-8 mr-3 text-primary-600" />
+            Videographer Dashboard
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Manage your assigned video projects
+          </p>
+        </div>
+        <button
+          onClick={() => setIsNewProjectModalOpen(true)}
+          className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition flex items-center space-x-2"
+        >
+          <VideoCameraIcon className="w-5 h-5" />
+          <span>New Project</span>
+        </button>
       </div>
 
       {/* Stats Grid */}
@@ -489,8 +528,12 @@ export default function VideographerDashboard() {
                                 onChange={(e) => setFileType(e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
                               >
-                                <option value={FileType.RAW_FOOTAGE}>Raw Footage</option>
-                                <option value={FileType.ASSET}>A-Roll / B-Roll</option>
+                                <option value={FileType.A_ROLL}>A-Roll (Main Footage)</option>
+                                <option value={FileType.B_ROLL}>B-Roll (Supporting Footage)</option>
+                                <option value={FileType.HOOK}>Hook (First 3-6 seconds)</option>
+                                <option value={FileType.BODY}>Body (Main Content)</option>
+                                <option value={FileType.CTA}>CTA (Call to Action)</option>
+                                <option value={FileType.AUDIO_CLIP}>Audio Clip</option>
                                 <option value={FileType.OTHER}>Other</option>
                               </select>
                             </div>
@@ -603,37 +646,85 @@ export default function VideographerDashboard() {
                     </div>
                   </div>
 
-                  {/* Update Production Stage */}
+                  {/* Production Details */}
                   <div className="border-t pt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Shooting Status</h3>
-                    <p className="text-sm text-gray-600 mb-4">You can mark your shooting progress or submit for admin review</p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Production Details</h3>
 
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Shooting Status</label>
-                        <select
-                          value={selectedStage}
-                          onChange={(e) => setSelectedStage(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                        >
-                          {videographerStages.map((stage) => (
-                            <option key={stage} value={stage}>
-                              {stage.replace(/_/g, ' ')}
-                            </option>
-                          ))}
-                        </select>
+                    <div className="grid grid-cols-2 gap-6">
+                      {/* Project Info */}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Project ID</label>
+                          <p className="mt-1 text-sm text-gray-900">{selectedAnalysis.content_id || 'N/A'}</p>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Current Stage</label>
+                          <p className="mt-1">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStageColor(selectedAnalysis.production_stage)}`}>
+                              {selectedAnalysis.production_stage?.replace(/_/g, ' ') || 'NOT STARTED'}
+                            </span>
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Priority</label>
+                          <p className="mt-1">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(selectedAnalysis.priority)}`}>
+                              {selectedAnalysis.priority || 'NORMAL'}
+                            </span>
+                          </p>
+                        </div>
+
+                        {selectedAnalysis.deadline && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">Deadline</label>
+                            <p className="mt-1 text-sm text-gray-900">{new Date(selectedAnalysis.deadline).toLocaleDateString()}</p>
+                          </div>
+                        )}
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Production Notes</label>
-                        <textarea
-                          value={productionNotes}
-                          onChange={(e) => setProductionNotes(e.target.value)}
-                          rows={4}
-                          placeholder="Add notes about the shoot, issues encountered, etc..."
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                        />
+                      {/* Team Info */}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Script Writer</label>
+                          <p className="mt-1 text-sm text-gray-900">{selectedAnalysis.full_name || 'Unknown'}</p>
+                        </div>
+
+                        {selectedAnalysis.editor && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">Editor</label>
+                            <p className="mt-1 text-sm text-gray-900">{selectedAnalysis.editor.full_name || selectedAnalysis.editor.email}</p>
+                          </div>
+                        )}
+
+                        {selectedAnalysis.posting_manager && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">Posting Manager</label>
+                            <p className="mt-1 text-sm text-gray-900">{selectedAnalysis.posting_manager.full_name || selectedAnalysis.posting_manager.email}</p>
+                          </div>
+                        )}
+
+                        {selectedAnalysis.total_people_involved && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">People Involved</label>
+                            <p className="mt-1 text-sm text-gray-900">{selectedAnalysis.total_people_involved}</p>
+                          </div>
+                        )}
                       </div>
+                    </div>
+
+                    {/* Production Notes */}
+                    <div className="mt-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Production Notes</label>
+                      <textarea
+                        value={productionNotes}
+                        onChange={(e) => setProductionNotes(e.target.value)}
+                        rows={4}
+                        placeholder="Add notes about the shoot, issues encountered, progress updates..."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      />
+                      <p className="mt-2 text-xs text-gray-500">These notes will be visible to the admin and other team members</p>
                     </div>
                   </div>
                 </div>
@@ -656,16 +747,152 @@ export default function VideographerDashboard() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Updating...
+                        Saving...
                       </>
                     ) : (
                       <>
                         <CheckCircleIcon className="w-5 h-5 mr-2" />
-                        Update Stage
+                        Save Notes
                       </>
                     )}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Project Modal */}
+      {isNewProjectModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setIsNewProjectModalOpen(false)}></div>
+            <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                    <VideoCameraIcon className="w-7 h-7 text-primary-600 mr-2" />
+                    New Project
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Create a new video project and start shooting
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Project Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newProjectTitle}
+                    onChange={(e) => setNewProjectTitle(e.target.value)}
+                    placeholder="e.g., Product Review - iPhone 15"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Reference Link <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={newProjectReferenceUrl}
+                    onChange={(e) => setNewProjectReferenceUrl(e.target.value)}
+                    placeholder="https://www.instagram.com/reel/..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Project Description</label>
+                  <textarea
+                    value={newProjectDescription}
+                    onChange={(e) => setNewProjectDescription(e.target.value)}
+                    rows={4}
+                    placeholder="Describe the project, shooting requirements, expected outcome..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Estimated Shoot Date</label>
+                    <input
+                      type="date"
+                      value={newProjectShootDate}
+                      onChange={(e) => setNewProjectShootDate(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">People Required</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={newProjectPeople}
+                      onChange={(e) => setNewProjectPeople(parseInt(e.target.value) || 1)}
+                      placeholder="1"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>Note:</strong> This will create a new project and assign it to you. You can start uploading footage immediately.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => setIsNewProjectModalOpen(false)}
+                  disabled={createProjectMutation.isPending}
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (!newProjectTitle.trim()) {
+                      toast.error('Project title is required');
+                      return;
+                    }
+                    if (!newProjectReferenceUrl.trim()) {
+                      toast.error('Reference link is required');
+                      return;
+                    }
+
+                    createProjectMutation.mutate({
+                      title: newProjectTitle,
+                      reference_url: newProjectReferenceUrl,
+                      description: newProjectDescription || undefined,
+                      estimated_shoot_date: newProjectShootDate || undefined,
+                      people_required: newProjectPeople,
+                    });
+                  }}
+                  disabled={createProjectMutation.isPending || !newProjectTitle.trim() || !newProjectReferenceUrl.trim()}
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  {createProjectMutation.isPending ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Project'
+                  )}
+                </button>
               </div>
             </div>
           </div>

@@ -41,6 +41,17 @@ export const AssignmentRole = {
 export type AssignmentRole = typeof AssignmentRole[keyof typeof AssignmentRole];
 
 export const FileType = {
+  // Video components
+  A_ROLL: 'A_ROLL',           // Main footage/talking head
+  B_ROLL: 'B_ROLL',           // Supporting/overlay footage
+  HOOK: 'HOOK',               // First 3-6 seconds
+  BODY: 'BODY',               // Main content
+  CTA: 'CTA',                 // Call to action
+
+  // Audio
+  AUDIO_CLIP: 'AUDIO_CLIP',   // Audio files/voiceovers
+
+  // Legacy types (kept for backward compatibility)
   RAW_FOOTAGE: 'RAW_FOOTAGE',
   EDITED_VIDEO: 'EDITED_VIDEO',
   FINAL_VIDEO: 'FINAL_VIDEO',
