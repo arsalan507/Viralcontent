@@ -7,13 +7,16 @@ import {
   CloudIcon,
   TrashIcon,
   UserCircleIcon,
+  DocumentTextIcon,
+  Bars3Icon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import { UserRole } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { adminUserService } from '@/services/adminUserService';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<'team' | 'drive'>('team');
+  const [activeTab, setActiveTab] = useState<'team' | 'drive' | 'fields'>('team');
 
   return (
     <div className="space-y-6">
@@ -55,12 +58,25 @@ export default function SettingsPage() {
             <CloudIcon className="w-5 h-5 mr-2" />
             Google Drive Settings
           </button>
+          <button
+            onClick={() => setActiveTab('fields')}
+            className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition ${
+              activeTab === 'fields'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <DocumentTextIcon className="w-5 h-5 mr-2" />
+            Script Idea Fields
+          </button>
         </div>
       </div>
 
       {/* Content */}
       <div className="bg-white rounded-b-lg shadow-sm">
-        {activeTab === 'team' ? <TeamManagement /> : <GoogleDriveSettings />}
+        {activeTab === 'team' && <TeamManagement />}
+        {activeTab === 'drive' && <GoogleDriveSettings />}
+        {activeTab === 'fields' && <ScriptIdeaFieldsManagement />}
       </div>
     </div>
   );
@@ -523,6 +539,235 @@ function GoogleDriveSettings() {
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+// Script Idea Fields Management Component
+interface ScriptField {
+  id: string;
+  name: string;
+  required: boolean;
+}
+
+function ScriptIdeaFieldsManagement() {
+  const [fields, setFields] = useState<ScriptField[]>(() => {
+    // Load from localStorage or use defaults
+    const saved = localStorage.getItem('script_idea_fields');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    // Default fields
+    return [
+      { id: '1', name: 'Hook', required: true },
+      { id: '2', name: 'Main Content', required: true },
+      { id: '3', name: 'Call to Action', required: false },
+      { id: '4', name: 'Target Emotion', required: true },
+      { id: '5', name: 'Expected Outcome', required: true },
+    ];
+  });
+
+  const [newFieldName, setNewFieldName] = useState('');
+  const [newFieldRequired, setNewFieldRequired] = useState(false);
+
+  // Save fields to localStorage whenever they change
+  const saveFields = (updatedFields: ScriptField[]) => {
+    setFields(updatedFields);
+    localStorage.setItem('script_idea_fields', JSON.stringify(updatedFields));
+    toast.success('Script fields updated successfully!');
+  };
+
+  const handleAddField = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
+    if (!newFieldName.trim()) {
+      toast.error('Please enter a field name');
+      return;
+    }
+
+    const newField: ScriptField = {
+      id: Date.now().toString(),
+      name: newFieldName.trim(),
+      required: newFieldRequired,
+    };
+
+    saveFields([...fields, newField]);
+    setNewFieldName('');
+    setNewFieldRequired(false);
+  };
+
+  const handleDeleteField = (id: string) => {
+    const field = fields.find(f => f.id === id);
+    if (confirm(`Are you sure you want to delete the "${field?.name}" field?`)) {
+      saveFields(fields.filter(f => f.id !== id));
+    }
+  };
+
+  const handleToggleRequired = (id: string) => {
+    saveFields(
+      fields.map(f =>
+        f.id === id ? { ...f, required: !f.required } : f
+      )
+    );
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddField();
+    }
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900">Script Idea Fields</h2>
+        <p className="text-sm text-gray-600 mt-1">
+          Customize the information script writers need to provide when submitting script ideas
+        </p>
+      </div>
+
+      {/* Info Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="font-medium text-blue-900 mb-2">How it works:</h3>
+        <ul className="list-disc list-inside space-y-1 text-sm text-blue-800">
+          <li>Add custom fields that script writers will fill out when submitting ideas</li>
+          <li>Mark fields as required or optional based on your workflow</li>
+          <li>Reorder fields by dragging (coming soon)</li>
+          <li>Delete fields you no longer need</li>
+        </ul>
+      </div>
+
+      {/* Add New Field Form */}
+      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Add New Field</h3>
+        <form onSubmit={handleAddField} className="flex items-end gap-3">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Field Name
+            </label>
+            <input
+              type="text"
+              value={newFieldName}
+              onChange={(e) => setNewFieldName(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              placeholder="e.g., Background Music, Location"
+            />
+          </div>
+          <div className="flex items-center">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={newFieldRequired}
+                onChange={(e) => setNewFieldRequired(e.target.checked)}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <span className="text-sm text-gray-700">Required</span>
+            </label>
+          </div>
+          <button
+            type="submit"
+            className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium"
+          >
+            <PlusIcon className="w-4 h-4 mr-1" />
+            Add Field
+          </button>
+        </form>
+      </div>
+
+      {/* Current Fields List */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900">
+            Current Fields ({fields.length})
+          </h3>
+        </div>
+
+        {fields.length === 0 ? (
+          <div className="text-center py-12">
+            <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <p className="mt-2 text-sm text-gray-500">No fields configured yet</p>
+            <p className="text-xs text-gray-400">Add your first field above to get started</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {fields.map((field, index) => (
+              <div
+                key={field.id}
+                className="px-6 py-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4 flex-1">
+                    {/* Drag Handle (for future drag-and-drop) */}
+                    <div className="text-gray-400 cursor-grab hover:text-gray-600">
+                      <Bars3Icon className="w-5 h-5" />
+                    </div>
+
+                    {/* Field Info */}
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-900">
+                          {field.name}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                            field.required
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {field.required ? 'Required' : 'Optional'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Field #{index + 1}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleToggleRequired(field.id)}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                    >
+                      {field.required ? 'Make Optional' : 'Make Required'}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteField(field.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                      title="Delete field"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Best Practices */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <h3 className="font-medium text-gray-900 mb-2">Best Practices:</h3>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+          <li>Keep field names clear and concise</li>
+          <li>Only mark essential information as "Required"</li>
+          <li>Use consistent naming conventions across fields</li>
+          <li>Consider the script writer's workflow when adding fields</li>
+          <li>Regularly review and remove unused fields</li>
+        </ul>
+      </div>
+
+      {/* Save Note */}
+      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+        <p className="text-sm text-green-800">
+          <strong>Note:</strong> Changes are saved automatically when you add, delete, or modify fields.
+        </p>
+      </div>
     </div>
   );
 }
