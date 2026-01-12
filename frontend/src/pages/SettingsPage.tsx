@@ -10,13 +10,19 @@ import {
   DocumentTextIcon,
   Bars3Icon,
   PlusIcon,
+  WrenchScrewdriverIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  PencilIcon,
+  EyeIcon,
+  EyeSlashIcon,
 } from '@heroicons/react/24/outline';
 import { UserRole } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { adminUserService } from '@/services/adminUserService';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<'team' | 'drive' | 'fields'>('team');
+  const [activeTab, setActiveTab] = useState<'team' | 'drive' | 'fields' | 'formBuilder'>('team');
 
   return (
     <div className="space-y-6">
@@ -69,6 +75,17 @@ export default function SettingsPage() {
             <DocumentTextIcon className="w-5 h-5 mr-2" />
             Dropdown Options
           </button>
+          <button
+            onClick={() => setActiveTab('formBuilder')}
+            className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition ${
+              activeTab === 'formBuilder'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <WrenchScrewdriverIcon className="w-5 h-5 mr-2" />
+            Form Builder
+          </button>
         </div>
       </div>
 
@@ -77,6 +94,7 @@ export default function SettingsPage() {
         {activeTab === 'team' && <TeamManagement />}
         {activeTab === 'drive' && <GoogleDriveSettings />}
         {activeTab === 'fields' && <ScriptIdeaFieldsManagement />}
+        {activeTab === 'formBuilder' && <FormBuilderManagement />}
       </div>
     </div>
   );
@@ -850,6 +868,284 @@ function ScriptIdeaFieldsManagement() {
       <div className="bg-green-50 border border-green-200 rounded-lg p-3">
         <p className="text-sm text-green-800">
           <strong>✅ Auto-save enabled:</strong> Changes are saved automatically and will be immediately available in the script submission form.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// FORM BUILDER MANAGEMENT COMPONENT
+// ============================================
+
+import { formBuilderService } from '@/services/formBuilderService';
+import type { ScriptFormFieldConfig, FieldType } from '@/types/formBuilder';
+
+function FormBuilderManagement() {
+  const [fields, setFields] = useState<ScriptFormFieldConfig[]>(() =>
+    formBuilderService.getAllFields()
+  );
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Reload fields
+  const reloadFields = () => {
+    setFields(formBuilderService.getAllFields());
+  };
+
+  // Handle field enable/disable
+  const handleToggleEnabled = (id: string) => {
+    const field = fields.find(f => f.id === id);
+    if (!field) return;
+
+    formBuilderService.updateField(id, { enabled: !field.enabled });
+    reloadFields();
+    toast.success(`Field "${field.label}" ${!field.enabled ? 'enabled' : 'disabled'}`);
+  };
+
+  // Handle field reorder
+  const handleMoveUp = (id: string) => {
+    const index = fields.findIndex(f => f.id === id);
+    if (index <= 0) return;
+
+    const newFields = [...fields];
+    [newFields[index - 1], newFields[index]] = [newFields[index], newFields[index - 1]];
+
+    // Update order
+    formBuilderService.reorderFields(newFields.map(f => f.id));
+    reloadFields();
+    toast.success('Field order updated');
+  };
+
+  const handleMoveDown = (id: string) => {
+    const index = fields.findIndex(f => f.id === id);
+    if (index === -1 || index >= fields.length - 1) return;
+
+    const newFields = [...fields];
+    [newFields[index + 1], newFields[index]] = [newFields[index], newFields[index + 1]];
+
+    // Update order
+    formBuilderService.reorderFields(newFields.map(f => f.id));
+    reloadFields();
+    toast.success('Field order updated');
+  };
+
+  // Handle field delete
+  const handleDeleteField = (id: string) => {
+    const field = fields.find(f => f.id === id);
+    if (!field) return;
+
+    if (confirm(`Are you sure you want to delete the "${field.label}" field?\n\nThis will permanently remove it from the form.`)) {
+      formBuilderService.deleteField(id);
+      reloadFields();
+      toast.success(`Field "${field.label}" deleted`);
+    }
+  };
+
+  // Handle reset to default
+  const handleResetToDefault = () => {
+    if (confirm('Are you sure you want to reset the form to default configuration?\n\nThis will delete all your custom fields and restore the original form structure.')) {
+      formBuilderService.resetToDefault();
+      reloadFields();
+      toast.success('Form reset to default configuration');
+    }
+  };
+
+  // Get field type badge color
+  const getFieldTypeBadge = (type: FieldType) => {
+    const badges: Record<FieldType, string> = {
+      'text': 'bg-blue-100 text-blue-800',
+      'textarea': 'bg-indigo-100 text-indigo-800',
+      'url': 'bg-cyan-100 text-cyan-800',
+      'number': 'bg-purple-100 text-purple-800',
+      'dropdown': 'bg-green-100 text-green-800',
+      'db-dropdown': 'bg-emerald-100 text-emerald-800',
+      'multi-select': 'bg-teal-100 text-teal-800',
+      'voice': 'bg-pink-100 text-pink-800',
+      'textarea-voice': 'bg-rose-100 text-rose-800',
+      'divider': 'bg-gray-100 text-gray-800',
+    };
+    return badges[type] || 'bg-gray-100 text-gray-800';
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Script Form Builder</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Configure what fields Script Writers see when submitting new ideas (Notion-style)
+          </p>
+        </div>
+        <button
+          onClick={handleResetToDefault}
+          className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+        >
+          Reset to Default
+        </button>
+      </div>
+
+      {/* Info Banner */}
+      <div className="bg-gradient-to-r from-primary-50 to-purple-50 border border-primary-200 rounded-lg p-4">
+        <h3 className="font-medium text-primary-900 mb-2">🎨 How it works:</h3>
+        <ul className="list-disc list-inside space-y-1 text-sm text-primary-800">
+          <li>Reorder fields using up/down arrows to change the form layout</li>
+          <li>Enable/disable fields to show/hide them from Script Writers</li>
+          <li>Edit fields to change labels, placeholders, and validation rules</li>
+          <li>All changes apply immediately to the "New Analysis" form</li>
+        </ul>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-2xl font-bold text-primary-600">{fields.length}</div>
+          <div className="text-sm text-gray-600">Total Fields</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-2xl font-bold text-green-600">
+            {fields.filter(f => f.enabled).length}
+          </div>
+          <div className="text-sm text-gray-600">Enabled</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-2xl font-bold text-red-600">
+            {fields.filter(f => f.required).length}
+          </div>
+          <div className="text-sm text-gray-600">Required</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-2xl font-bold text-gray-600">
+            {fields.filter(f => !f.enabled).length}
+          </div>
+          <div className="text-sm text-gray-600">Disabled</div>
+        </div>
+      </div>
+
+      {/* Fields List */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-primary-600 to-purple-600 px-6 py-3">
+          <h3 className="text-sm font-semibold text-white">Form Fields ({fields.length})</h3>
+        </div>
+
+        <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
+          {fields.map((field, index) => (
+            <div
+              key={field.id}
+              className={`px-6 py-4 hover:bg-gray-50 transition-colors ${
+                !field.enabled ? 'opacity-50' : ''
+              }`}
+            >
+              <div className="flex items-center justify-between gap-4">
+                {/* Drag Handle + Order */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex flex-col">
+                    <button
+                      onClick={() => handleMoveUp(field.id)}
+                      disabled={index === 0}
+                      className={`p-0.5 rounded hover:bg-gray-200 transition ${
+                        index === 0 ? 'opacity-30 cursor-not-allowed' : ''
+                      }`}
+                      title="Move up"
+                    >
+                      <ArrowUpIcon className="w-3 h-3 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => handleMoveDown(field.id)}
+                      disabled={index === fields.length - 1}
+                      className={`p-0.5 rounded hover:bg-gray-200 transition ${
+                        index === fields.length - 1 ? 'opacity-30 cursor-not-allowed' : ''
+                      }`}
+                      title="Move down"
+                    >
+                      <ArrowDownIcon className="w-3 h-3 text-gray-600" />
+                    </button>
+                  </div>
+                  <div className="text-gray-400">
+                    <Bars3Icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-mono text-gray-500 w-8">#{index + 1}</span>
+                </div>
+
+                {/* Field Info */}
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="text-sm font-medium text-gray-900">{field.label}</span>
+                    {field.required && (
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                        Required
+                      </span>
+                    )}
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getFieldTypeBadge(field.type)}`}>
+                      {field.type}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    <span className="font-mono">{field.fieldKey}</span>
+                    {field.placeholder && (
+                      <span className="ml-2">• {field.placeholder}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleToggleEnabled(field.id)}
+                    className={`p-2 rounded-lg transition ${
+                      field.enabled
+                        ? 'text-green-600 hover:bg-green-50'
+                        : 'text-gray-400 hover:bg-gray-100'
+                    }`}
+                    title={field.enabled ? 'Disable field' : 'Enable field'}
+                  >
+                    {field.enabled ? (
+                      <EyeIcon className="w-4 h-4" />
+                    ) : (
+                      <EyeSlashIcon className="w-4 h-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedFieldId(field.id);
+                      setIsEditModalOpen(true);
+                    }}
+                    className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition"
+                    title="Edit field"
+                  >
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteField(field.id)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                    title="Delete field"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Best Practices */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <h3 className="font-medium text-gray-900 mb-2">💡 Pro Tips:</h3>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+          <li>Group related fields together (e.g., all content fields, then production fields)</li>
+          <li>Use dividers to separate sections visually</li>
+          <li>Only mark truly essential fields as "Required"</li>
+          <li>Test the form as a Script Writer after making changes</li>
+          <li>Disable fields temporarily instead of deleting them</li>
+        </ul>
+      </div>
+
+      {/* Auto-save Note */}
+      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+        <p className="text-sm text-green-800">
+          <strong>✅ Auto-save enabled:</strong> All changes are saved automatically and will be immediately reflected in the Script Writer form.
         </p>
       </div>
     </div>
