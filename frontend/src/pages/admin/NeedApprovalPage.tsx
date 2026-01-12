@@ -301,7 +301,13 @@ export default function NeedApprovalPage() {
                       <button
                         onClick={() => {
                           setSelectedScript(script);
-                          approveScriptMutation.mutate({ decision: 'APPROVED', review_score: 8 });
+                          approveScriptMutation.mutate({
+                            status: 'APPROVED',
+                            hookStrength: 7,
+                            contentQuality: 7,
+                            viralPotential: 7,
+                            replicationClarity: 7,
+                          });
                         }}
                         disabled={approveScriptMutation.isPending}
                         className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition disabled:opacity-50 flex items-center"
