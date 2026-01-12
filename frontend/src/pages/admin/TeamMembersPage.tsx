@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { UserGroupIcon, DocumentTextIcon, VideoCameraIcon, FilmIcon, MegaphoneIcon } from '@heroicons/react/24/outline';
+import TeamMemberProjectsModal from '@/components/admin/TeamMemberProjectsModal';
 
 interface TeamMember {
   id: string;
@@ -28,7 +30,17 @@ interface TeamStats {
 }
 
 export default function TeamMembersPage() {
-  // const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; role: string } | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleMemberClick = (member: TeamMember) => {
+    setSelectedMember({
+      id: member.id,
+      name: member.full_name || member.email,
+      role: member.role,
+    });
+    setIsModalOpen(true);
+  };
 
   // Fetch all team members
   const { data: teamMembers = [], isLoading } = useQuery({
@@ -296,11 +308,14 @@ export default function TeamMembersPage() {
                     {groupedMembers.SCRIPT_WRITER.map((member) => {
                       const stats = scriptWriterStats[member.id] || {};
                       return (
-                        <tr key={member.id} className="hover:bg-gray-50">
+                        <tr key={member.id} className="hover:bg-gray-50 cursor-pointer">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
+                            <button
+                              onClick={() => handleMemberClick(member)}
+                              className="text-sm font-medium text-primary-600 hover:text-primary-800 hover:underline text-left"
+                            >
                               {member.full_name || member.email}
-                            </div>
+                            </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {stats.total_submitted || 0}
@@ -368,11 +383,14 @@ export default function TeamMembersPage() {
                     {groupedMembers.VIDEOGRAPHER.map((member) => {
                       const stats = videographerStats[member.id] || {};
                       return (
-                        <tr key={member.id} className="hover:bg-gray-50">
+                        <tr key={member.id} className="hover:bg-gray-50 cursor-pointer">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
+                            <button
+                              onClick={() => handleMemberClick(member)}
+                              className="text-sm font-medium text-primary-600 hover:text-primary-800 hover:underline text-left"
+                            >
                               {member.full_name || member.email}
-                            </div>
+                            </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {stats.assigned || 0}
@@ -431,11 +449,14 @@ export default function TeamMembersPage() {
                     {groupedMembers.EDITOR.map((member) => {
                       const stats = editorStats[member.id] || {};
                       return (
-                        <tr key={member.id} className="hover:bg-gray-50">
+                        <tr key={member.id} className="hover:bg-gray-50 cursor-pointer">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
+                            <button
+                              onClick={() => handleMemberClick(member)}
+                              className="text-sm font-medium text-primary-600 hover:text-primary-800 hover:underline text-left"
+                            >
                               {member.full_name || member.email}
-                            </div>
+                            </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {stats.assigned || 0}
@@ -494,11 +515,14 @@ export default function TeamMembersPage() {
                     {groupedMembers.POSTING_MANAGER.map((member) => {
                       const stats = postingStats[member.id] || {};
                       return (
-                        <tr key={member.id} className="hover:bg-gray-50">
+                        <tr key={member.id} className="hover:bg-gray-50 cursor-pointer">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
+                            <button
+                              onClick={() => handleMemberClick(member)}
+                              className="text-sm font-medium text-primary-600 hover:text-primary-800 hover:underline text-left"
+                            >
                               {member.full_name || member.email}
-                            </div>
+                            </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {stats.assigned || 0}
@@ -522,6 +546,20 @@ export default function TeamMembersPage() {
           </>
         )}
       </div>
+
+      {/* Team Member Projects Modal */}
+      {selectedMember && (
+        <TeamMemberProjectsModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedMember(null);
+          }}
+          memberId={selectedMember.id}
+          memberName={selectedMember.name}
+          memberRole={selectedMember.role}
+        />
+      )}
     </div>
   );
 }
