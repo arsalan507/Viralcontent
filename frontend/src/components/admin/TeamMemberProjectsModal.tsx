@@ -25,34 +25,62 @@ export default function TeamMemberProjectsModal({
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['team-member-projects', memberId, memberRole],
     queryFn: async () => {
-      let query = supabase.from('viral_analyses').select('*');
+      let data: any[] = [];
 
       // Filter based on role
       if (memberRole === 'SCRIPT_WRITER') {
-        query = query.eq('user_id', memberId);
-      } else if (memberRole === 'VIDEOGRAPHER') {
-        query = query.eq('videographer_id', memberId);
-      } else if (memberRole === 'EDITOR') {
-        query = query.eq('editor_id', memberId);
-      } else if (memberRole === 'POSTING_MANAGER') {
-        query = query.eq('posting_manager_id', memberId);
+        // Script writers: direct query on viral_analyses.user_id
+        const { data: analyses, error } = await supabase
+          .from('viral_analyses')
+          .select('*')
+          .eq('user_id', memberId)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        data = analyses || [];
+      } else {
+        // Videographers, Editors, Posting Managers: query through project_assignments
+        const { data: assignments, error: assignmentsError } = await supabase
+          .from('project_assignments')
+          .select('analysis_id')
+          .eq('user_id', memberId)
+          .eq('role', memberRole);
+
+        if (assignmentsError) throw assignmentsError;
+
+        if (assignments && assignments.length > 0) {
+          const analysisIds = assignments.map(a => a.analysis_id);
+
+          const { data: analyses, error } = await supabase
+            .from('viral_analyses')
+            .select('*')
+            .in('id', analysisIds)
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          data = analyses || [];
+        }
       }
-
-      query = query.order('created_at', { ascending: false });
-
-      const { data, error } = await query;
-      if (error) throw error;
 
       // Fetch related profile data separately if needed
       if (data && data.length > 0) {
+        // Collect all user IDs from assignments
+        const analysisIds = data.map(d => d.id);
+        const { data: allAssignments } = await supabase
+          .from('project_assignments')
+          .select('analysis_id, user_id, role')
+          .in('analysis_id', analysisIds);
+
+        // Collect unique user IDs
         const userIds = new Set<string>();
         data.forEach(project => {
-          if (project.videographer_id) userIds.add(project.videographer_id);
-          if (project.editor_id) userIds.add(project.editor_id);
-          if (project.posting_manager_id) userIds.add(project.posting_manager_id);
           if (project.user_id) userIds.add(project.user_id);
         });
+        allAssignments?.forEach(assignment => {
+          if (assignment.user_id) userIds.add(assignment.user_id);
+        });
 
+        // Fetch all profiles in one query
         if (userIds.size > 0) {
           const { data: profiles } = await supabase
             .from('profiles')
@@ -63,15 +91,7 @@ export default function TeamMemberProjectsModal({
 
           // Attach profile data to projects
           data.forEach(project => {
-            if (project.videographer_id) {
-              project.videographer = profileMap.get(project.videographer_id);
-            }
-            if (project.editor_id) {
-              project.editor = profileMap.get(project.editor_id);
-            }
-            if (project.posting_manager_id) {
-              project.posting_manager = profileMap.get(project.posting_manager_id);
-            }
+            // Attach script writer info
             if (project.user_id) {
               const creator = profileMap.get(project.user_id);
               if (creator) {
@@ -79,6 +99,21 @@ export default function TeamMemberProjectsModal({
                 project.email = creator.email;
               }
             }
+
+            // Attach team member assignments
+            const projectAssignments = allAssignments?.filter(a => a.analysis_id === project.id) || [];
+            projectAssignments.forEach(assignment => {
+              const profile = profileMap.get(assignment.user_id);
+              if (profile) {
+                if (assignment.role === 'VIDEOGRAPHER') {
+                  project.videographer = profile;
+                } else if (assignment.role === 'EDITOR') {
+                  project.editor = profile;
+                } else if (assignment.role === 'POSTING_MANAGER') {
+                  project.posting_manager = profile;
+                }
+              }
+            });
           });
         }
       }
