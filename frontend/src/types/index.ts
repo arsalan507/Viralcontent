@@ -231,6 +231,9 @@ export interface AnalysisFormData {
   ourIdeaAudioUrl: string;
   shootLocation: string;
   shootPossibility: 25 | 50 | 75 | 100;
+
+  // Custom fields from Form Builder (dynamic)
+  [key: string]: any; // Allow any custom field
 }
 
 export interface ReviewAnalysisData {

@@ -97,6 +97,25 @@ export const analysesService = {
       ourIdeaAudioUrl = await this.uploadAudio(user.id, formData.ourIdeaAudio, 'our_idea');
     }
 
+    // Separate known fields from custom fields
+    const knownFields = new Set([
+      'referenceUrl', 'hook', 'hookVoiceNote', 'hookVoiceNoteUrl',
+      'whyViral', 'whyViralVoiceNote', 'whyViralVoiceNoteUrl',
+      'howToReplicate', 'howToReplicateVoiceNote', 'howToReplicateVoiceNoteUrl',
+      'targetEmotion', 'expectedOutcome', 'industryId', 'profileId',
+      'hookTagIds', 'totalPeopleInvolved', 'characterTagIds',
+      'onScreenTextHook', 'ourIdeaAudio', 'ourIdeaAudioUrl',
+      'shootLocation', 'shootPossibility'
+    ]);
+
+    // Extract custom fields
+    const customFields: Record<string, any> = {};
+    Object.keys(formData).forEach(key => {
+      if (!knownFields.has(key)) {
+        customFields[key] = formData[key];
+      }
+    });
+
     const { data, error } = await supabase
       .from('viral_analyses')
       .insert({
@@ -118,6 +137,8 @@ export const analysesService = {
         our_idea_audio_url: ourIdeaAudioUrl,
         shoot_location: formData.shootLocation,
         shoot_possibility: formData.shootPossibility,
+        // Custom fields from Form Builder
+        custom_fields: customFields,
       })
       .select()
       .single();
@@ -162,6 +183,25 @@ export const analysesService = {
       ourIdeaAudioUrl = await this.uploadAudio(user.id, formData.ourIdeaAudio, 'our_idea');
     }
 
+    // Separate known fields from custom fields
+    const knownFields = new Set([
+      'referenceUrl', 'hook', 'hookVoiceNote', 'hookVoiceNoteUrl',
+      'whyViral', 'whyViralVoiceNote', 'whyViralVoiceNoteUrl',
+      'howToReplicate', 'howToReplicateVoiceNote', 'howToReplicateVoiceNoteUrl',
+      'targetEmotion', 'expectedOutcome', 'industryId', 'profileId',
+      'hookTagIds', 'totalPeopleInvolved', 'characterTagIds',
+      'onScreenTextHook', 'ourIdeaAudio', 'ourIdeaAudioUrl',
+      'shootLocation', 'shootPossibility'
+    ]);
+
+    // Extract custom fields
+    const customFields: Record<string, any> = {};
+    Object.keys(formData).forEach(key => {
+      if (!knownFields.has(key)) {
+        customFields[key] = formData[key];
+      }
+    });
+
     const { data, error } = await supabase
       .from('viral_analyses')
       .update({
@@ -182,6 +222,8 @@ export const analysesService = {
         our_idea_audio_url: ourIdeaAudioUrl,
         shoot_location: formData.shootLocation,
         shoot_possibility: formData.shootPossibility,
+        // Custom fields from Form Builder
+        custom_fields: customFields,
       })
       .eq('id', id)
       .select()
