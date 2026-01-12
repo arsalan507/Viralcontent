@@ -7,7 +7,6 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ViralAnalysis, ProductionFile, ReviewAnalysisData, UpdateProductionStageData } from '@/types';
 import { DocumentTextIcon, VideoCameraIcon, FilmIcon, CheckCircleIcon, XCircleIcon, EyeIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import ReviewScoreInput from '@/components/ReviewScoreInput';
 import AssignTeamModal from '@/components/AssignTeamModal';
 import ScriptViewModal from '@/components/admin/ScriptViewModal';
 import RejectScriptModal from '@/components/admin/RejectScriptModal';
@@ -17,7 +16,6 @@ export default function NeedApprovalPage() {
   const [selectedScript, setSelectedScript] = useState<ViralAnalysis | null>(null);
   const [selectedShoot, setSelectedShoot] = useState<ViralAnalysis | null>(null);
   const [selectedEdit, setSelectedEdit] = useState<ViralAnalysis | null>(null);
-  const [rejectionReason, setRejectionReason] = useState('');
   const [showAssignTeamModal, setShowAssignTeamModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -136,7 +134,6 @@ export default function NeedApprovalPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'pending-count'] });
       toast.success('Script rejected');
       setSelectedScript(null);
-      setRejectionReason('');
     },
     onError: () => {
       toast.error('Failed to reject script');
@@ -527,11 +524,17 @@ export default function NeedApprovalPage() {
             setSelectedScript(null);
           }}
           onApprove={() => {
-            approveScriptMutation.mutate({ decision: 'APPROVED', review_score: 8 });
+            approveScriptMutation.mutate({
+              status: 'APPROVED',
+              hookStrength: 7,
+              contentQuality: 7,
+              viralPotential: 7,
+              replicationClarity: 7,
+            });
           }}
           onReject={() => {
-            // TODO: Add rejection modal with reason
-            toast.info('Rejection modal coming soon');
+            // Open rejection modal
+            setShowRejectModal(true);
           }}
         />
       )}

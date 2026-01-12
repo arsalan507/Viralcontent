@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { UserGroupIcon, DocumentTextIcon, VideoCameraIcon, FilmIcon, MegaphoneIcon } from '@heroicons/react/24/outline';
-import { useState } from 'react';
 
 interface TeamMember {
   id: string;
@@ -29,7 +28,7 @@ interface TeamStats {
 }
 
 export default function TeamMembersPage() {
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  // const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
   // Fetch all team members
   const { data: teamMembers = [], isLoading } = useQuery({
@@ -212,29 +211,29 @@ export default function TeamMembersPage() {
     POSTING_MANAGER: teamMembers.filter(m => m.role === 'POSTING_MANAGER'),
   };
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'SCRIPT_WRITER': return <DocumentTextIcon className="w-5 h-5" />;
-      case 'VIDEOGRAPHER': return <VideoCameraIcon className="w-5 h-5" />;
-      case 'EDITOR': return <FilmIcon className="w-5 h-5" />;
-      case 'POSTING_MANAGER': return <MegaphoneIcon className="w-5 h-5" />;
-      default: return <UserGroupIcon className="w-5 h-5" />;
-    }
-  };
+  // const getRoleIcon = (role: string) => {
+  //   switch (role) {
+  //     case 'SCRIPT_WRITER': return <DocumentTextIcon className="w-5 h-5" />;
+  //     case 'VIDEOGRAPHER': return <VideoCameraIcon className="w-5 h-5" />;
+  //     case 'EDITOR': return <FilmIcon className="w-5 h-5" />;
+  //     case 'POSTING_MANAGER': return <MegaphoneIcon className="w-5 h-5" />;
+  //     default: return <UserGroupIcon className="w-5 h-5" />;
+  //   }
+  // };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'SCRIPT_WRITER': return 'text-blue-600';
-      case 'VIDEOGRAPHER': return 'text-indigo-600';
-      case 'EDITOR': return 'text-purple-600';
-      case 'POSTING_MANAGER': return 'text-pink-600';
-      default: return 'text-gray-600';
-    }
-  };
+  // const getRoleColor = (role: string) => {
+  //   switch (role) {
+  //     case 'SCRIPT_WRITER': return 'text-blue-600';
+  //     case 'VIDEOGRAPHER': return 'text-indigo-600';
+  //     case 'EDITOR': return 'text-purple-600';
+  //     case 'POSTING_MANAGER': return 'text-pink-600';
+  //     default: return 'text-gray-600';
+  //   }
+  // };
 
-  const getRoleName = (role: string) => {
-    return role.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ') + 's';
-  };
+  // const getRoleName = (role: string) => {
+  //   return role.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ') + 's';
+  // };
 
   return (
     <div className="flex-1 bg-gray-50 overflow-auto">

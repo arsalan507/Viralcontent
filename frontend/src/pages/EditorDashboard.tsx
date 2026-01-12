@@ -38,10 +38,10 @@ export default function EditorDashboard() {
 
   // Separate raw footage (from videographer) and edited videos (from editor)
   const rawFootageFiles = productionFiles.filter((f: ProductionFile) =>
-    f.file_type === FileType.RAW_FOOTAGE || f.file_type === FileType.ASSET
+    f.file_type === 'raw-footage'
   );
   const editedVideoFiles = productionFiles.filter((f: ProductionFile) =>
-    f.file_type === FileType.EDITED_VIDEO || f.file_type === FileType.FINAL_VIDEO
+    f.file_type === 'edited-video' || f.file_type === 'final-video'
   );
 
   // Upload file mutation
@@ -49,14 +49,16 @@ export default function EditorDashboard() {
     mutationFn: (fileData: {
       analysisId: string;
       fileName: string;
-      fileType: typeof FileType[keyof typeof FileType];
+      fileType: 'raw-footage' | 'edited-video' | 'final-video';
       fileUrl: string;
+      fileId: string;
       description?: string;
     }) => productionFilesService.uploadFile({
       analysisId: fileData.analysisId,
       fileName: fileData.fileName,
       fileType: fileData.fileType,
       fileUrl: fileData.fileUrl,
+      fileId: fileData.fileId,
       description: fileData.description,
     }),
     onSuccess: () => {
@@ -141,8 +143,10 @@ export default function EditorDashboard() {
     uploadFileMutation.mutate({
       analysisId: selectedAnalysis.id,
       fileName,
-      fileType: fileType as typeof FileType[keyof typeof FileType],
+      fileType: fileType === 'EDITED_VIDEO' ? 'edited-video' :
+                fileType === 'FINAL_VIDEO' ? 'final-video' : 'raw-footage',
       fileUrl,
+      fileId: 'temp-' + Date.now(),
       description: fileDescription,
     });
   };
@@ -200,10 +204,10 @@ export default function EditorDashboard() {
 
   // Editors can only move to EDITING or submit for EDIT_REVIEW
   // They cannot change other stages - that's admin-only
-  const editorStages = [
-    ProductionStage.EDITING,
-    ProductionStage.EDIT_REVIEW, // Submit for admin review
-  ];
+  // const editorStages = [
+  //   ProductionStage.EDITING,
+  //   ProductionStage.EDIT_REVIEW, // Submit for admin review
+  // ];
 
   return (
     <div className="space-y-8">
@@ -733,7 +737,7 @@ export default function EditorDashboard() {
 
                   {/* Save Notes Button - Always available */}
                   <button
-                    onClick={handleUpdateStage}
+                    onClick={() => handleUpdateStage()}
                     disabled={updateStageMutation.isPending || selectedStage !== ProductionStage.EDITING}
                     className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center"
                   >

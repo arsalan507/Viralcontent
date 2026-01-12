@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { ChartBarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon } from '@heroicons/react/24/outline';
 import { ProductionStage } from '@/types';
 import type { ViralAnalysis } from '@/types';
 

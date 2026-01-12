@@ -50,14 +50,16 @@ export default function VideographerDashboard() {
     mutationFn: (fileData: {
       analysisId: string;
       fileName: string;
-      fileType: typeof FileType[keyof typeof FileType];
+      fileType: 'raw-footage' | 'edited-video' | 'final-video';
       fileUrl: string;
+      fileId: string;
       description?: string;
     }) => productionFilesService.uploadFile({
       analysisId: fileData.analysisId,
       fileName: fileData.fileName,
       fileType: fileData.fileType,
       fileUrl: fileData.fileUrl,
+      fileId: fileData.fileId,
       description: fileData.description,
     }),
     onSuccess: () => {
@@ -563,8 +565,9 @@ export default function VideographerDashboard() {
                                   uploadFileMutation.mutate({
                                     analysisId: selectedAnalysis.id,
                                     fileName: fileName || uploadedFileName,
-                                    fileType: fileType as typeof FileType[keyof typeof FileType],
+                                    fileType: 'raw-footage',
                                     fileUrl: uploadedFileUrl,
+                                    fileId: fileId,
                                     description: fileDescription,
                                   });
                                 }
@@ -761,7 +764,7 @@ export default function VideographerDashboard() {
 
                   {/* Save Notes Button - Always available */}
                   <button
-                    onClick={handleUpdateStage}
+                    onClick={() => handleUpdateStage()}
                     disabled={updateStageMutation.isPending || selectedStage !== ProductionStage.SHOOTING}
                     className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center"
                   >

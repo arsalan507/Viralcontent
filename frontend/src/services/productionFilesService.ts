@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { ProductionFile, UploadFileData, ViralAnalysis } from '@/types';
+import type { ProductionFile, ViralAnalysis } from '@/types';
 
 export const productionFilesService = {
   // Get all files for an analysis
@@ -57,7 +57,7 @@ export const productionFilesService = {
   // Update file details
   async updateFile(
     fileId: string,
-    updates: Partial<Pick<ProductionFile, 'file_name' | 'description' | 'is_primary'>>
+    updates: Partial<Pick<ProductionFile, 'file_name' | 'description'>>
   ): Promise<ProductionFile> {
     const { data, error } = await supabase
       .from('production_files')

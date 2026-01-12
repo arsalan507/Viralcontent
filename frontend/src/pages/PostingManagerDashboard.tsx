@@ -92,10 +92,10 @@ export default function PostingManagerDashboard() {
 
   // Posting Managers can only mark as POSTED
   // They cannot change other stages - that's admin-only
-  const postingManagerStages = [
-    ProductionStage.READY_TO_POST,
-    ProductionStage.POSTED, // Mark as posted after publishing
-  ];
+  // const postingManagerStages = [
+  //   ProductionStage.READY_TO_POST,
+  //   ProductionStage.POSTED, // Mark as posted after publishing
+  // ];
 
   return (
     <div className="space-y-8">
@@ -452,7 +452,7 @@ export default function PostingManagerDashboard() {
 
                   {/* Save Notes Button - Always available */}
                   <button
-                    onClick={handleUpdateStage}
+                    onClick={() => handleUpdateStage()}
                     disabled={updateStageMutation.isPending || selectedStage !== ProductionStage.READY_TO_POST}
                     className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center"
                   >

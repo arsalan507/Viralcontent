@@ -420,7 +420,7 @@ class GoogleDriveOAuthService {
     await this.ensureSignedIn();
 
     try {
-      const response = await gapi.client.drive.permissions.create({
+      await gapi.client.drive.permissions.create({
         fileId: fileId,
         resource: {
           type: 'user',
@@ -448,7 +448,7 @@ class GoogleDriveOAuthService {
     await this.ensureSignedIn();
 
     try {
-      const response = await gapi.client.drive.permissions.create({
+      await gapi.client.drive.permissions.create({
         fileId: folderId, // Folders are files in Drive API
         resource: {
           type: 'user',
