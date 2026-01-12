@@ -268,8 +268,12 @@ export const formBuilderService = {
   getConfig(): ScriptFormConfig {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
+      console.log('🔍 [formBuilderService] Reading from localStorage:', STORAGE_KEY);
+
       if (saved) {
         const config = JSON.parse(saved) as ScriptFormConfig;
+        console.log('✅ [formBuilderService] Found saved config with', config.fields.length, 'fields');
+        console.log('📋 [formBuilderService] Field IDs:', config.fields.map(f => f.id).join(', '));
 
         // Version migration logic (future-proofing)
         if (config.version !== CONFIG_VERSION) {
@@ -279,12 +283,16 @@ export const formBuilderService = {
 
         return config;
       }
+
+      console.log('⚠️ [formBuilderService] No saved config found, using default');
     } catch (error) {
-      console.error('Failed to load form config from localStorage:', error);
+      console.error('❌ [formBuilderService] Failed to load form config from localStorage:', error);
     }
 
     // Return default config if nothing found or error
-    return getDefaultConfig();
+    const defaultConfig = getDefaultConfig();
+    console.log('🔧 [formBuilderService] Returning default config with', defaultConfig.fields.length, 'fields');
+    return defaultConfig;
   },
 
   /**
@@ -294,9 +302,12 @@ export const formBuilderService = {
     try {
       config.lastUpdated = new Date().toISOString();
       config.version = CONFIG_VERSION;
+      console.log('💾 [formBuilderService] Saving config with', config.fields.length, 'fields to localStorage');
+      console.log('📋 [formBuilderService] Field IDs being saved:', config.fields.map(f => f.id).join(', '));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      console.log('✅ [formBuilderService] Config saved successfully');
     } catch (error) {
-      console.error('Failed to save form config to localStorage:', error);
+      console.error('❌ [formBuilderService] Failed to save form config to localStorage:', error);
       throw error;
     }
   },
@@ -313,7 +324,11 @@ export const formBuilderService = {
    * Get only enabled fields sorted by order
    */
   getEnabledFields(): ScriptFormFieldConfig[] {
-    return this.getAllFields().filter(f => f.enabled);
+    const allFields = this.getAllFields();
+    const enabledFields = allFields.filter(f => f.enabled);
+    console.log('🟢 [formBuilderService] getEnabledFields:', enabledFields.length, 'enabled out of', allFields.length, 'total');
+    console.log('📋 [formBuilderService] Enabled field IDs:', enabledFields.map(f => `${f.id} (${f.type})`).join(', '));
+    return enabledFields;
   },
 
   /**
@@ -329,6 +344,7 @@ export const formBuilderService = {
    */
   addField(field: ScriptFormFieldConfig): void {
     const config = this.getConfig();
+    console.log('➕ [formBuilderService] Adding new field:', field.id, field.label, field.type);
 
     // Validate unique ID
     if (config.fields.some(f => f.id === field.id)) {
@@ -340,7 +356,9 @@ export const formBuilderService = {
       throw new Error(`Field with key "${field.fieldKey}" already exists`);
     }
 
+    console.log('✅ [formBuilderService] Validation passed, adding field');
     config.fields.push(field);
+    console.log('📦 [formBuilderService] Config now has', config.fields.length, 'fields');
     this.saveConfig(config);
   },
 
